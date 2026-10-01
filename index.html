@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ---------- shadcn/ui design tokens (zinc) ---------- */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  --accent: 240 4.8% 95.9%;
+  --destructive: 0 84.2% 60.2%;
+  --ring: 240 5.9% 10%;
+  --radius: 0.5rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+}
+
+* { box-sizing: border-box; border-color: hsl(var(--border)); }
+html, body { margin: 0; }
+body {
+  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+.container { max-width: 44rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+/* ---------- shadcn components ---------- */
+.card { border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) + 4px); background: hsl(var(--card)); color: hsl(var(--card-foreground)); box-shadow: 0 1px 2px rgb(0 0 0 / .05); overflow: hidden; }
+.card-header { padding: 1.5rem 1.5rem 0; }
+.card-title { font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; margin: 0; line-height: 1; }
+.card-description { font-size: .875rem; color: hsl(var(--muted-foreground)); margin: .375rem 0 0; }
+.card-content { padding: 1.5rem; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; white-space: nowrap; border-radius: calc(var(--radius) - 2px); font: inherit; font-size: .875rem; font-weight: 500; height: 2.25rem; padding: 0 1rem; cursor: pointer; border: 1px solid transparent; transition: background-color .15s, color .15s; }
+.btn:focus-visible, .input:focus-visible, .tab:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.btn-default { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.btn-default:hover { background: hsl(var(--primary) / .9); }
+.btn-outline { background: hsl(var(--background)); border-color: hsl(var(--input)); color: hsl(var(--foreground)); }
+.btn-outline:hover { background: hsl(var(--accent)); }
+.btn svg { width: 1rem; height: 1rem; flex: none; }
+
+.input { height: 2.25rem; width: 100%; min-width: 0; border-radius: calc(var(--radius) - 2px); border: 1px solid hsl(var(--input)); background: transparent; padding: 0 .75rem; font: inherit; font-size: .875rem; color: inherit; box-shadow: 0 1px 2px rgb(0 0 0 / .05); }
+.input::placeholder { color: hsl(var(--muted-foreground)); }
+
+.badge { display: inline-flex; align-items: center; gap: .25rem; border-radius: 9999px; border: 1px solid transparent; padding: .125rem .625rem; font-size: .75rem; font-weight: 600; background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); }
+.badge-outline { background: transparent; border-color: hsl(var(--border)); color: hsl(var(--foreground)); font-weight: 500; }
+
+.separator { height: 1px; width: 100%; background: hsl(var(--border)); border: 0; margin: 0; }
+.skeleton { background: hsl(var(--muted)); border-radius: calc(var(--radius) - 2px); animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite; }
+@keyframes pulse { 50% { opacity: .5; } }
+
+.tabs-list { display: inline-flex; height: 2.25rem; align-items: center; border-radius: var(--radius); background: hsl(var(--muted)); padding: 3px; }
+.tab { border: 0; background: transparent; font: inherit; font-size: .875rem; font-weight: 500; color: hsl(var(--muted-foreground)); padding: .25rem .75rem; border-radius: calc(var(--radius) - 2px); cursor: pointer; height: 100%; }
+.tab[aria-selected="true"] { background: hsl(var(--background)); color: hsl(var(--foreground)); box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+
+.alert { display: flex; gap: .75rem; border: 1px solid hsl(var(--destructive) / .5); color: hsl(var(--destructive)); border-radius: var(--radius); padding: .75rem 1rem; font-size: .875rem; }
+.alert svg { width: 1rem; height: 1rem; margin-top: .15rem; flex: none; }
+.alert strong { display: block; font-weight: 500; }
+.alert span { color: hsl(var(--destructive) / .9); }
+
+/* ---------- page ---------- */
+.toolbar { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; align-items: center; }
+.toolbar form { display: flex; gap: .5rem; flex: 1 1 18rem; }
+.stack { display: grid; gap: 1rem; }
+.hero { display: grid; grid-template-columns: 1fr; }
+@media (min-width: 40rem) { .hero { grid-template-columns: 1.05fr 1fr; } }
+
+.doodle-panel { position: relative; min-height: 17rem; display: grid; place-items: end center; padding: 1rem 1rem 0; border-bottom: 1px solid hsl(var(--border)); transition: background-color .3s; }
+@media (min-width: 40rem) { .doodle-panel { border-bottom: 0; border-right: 1px solid hsl(var(--border)); } }
+.doodle-panel svg { width: 100%; max-width: 19rem; height: auto; display: block; }
+.bubble { position: absolute; top: 1rem; left: 1rem; max-width: 9.5rem; background: #fff; color: #18181b; border: 3px solid #18181b; border-radius: 1.25rem 1.25rem 1.25rem .25rem; padding: .4rem .8rem .5rem; font-family: "Caveat", "Comic Sans MS", cursive; font-weight: 600; font-size: 1.35rem; line-height: 1.1; transform: rotate(-3deg); }
+
+.now { padding: 1.5rem; display: flex; flex-direction: column; justify-content: center; gap: .25rem; }
+.place { display: flex; align-items: center; gap: .375rem; font-size: .875rem; color: hsl(var(--muted-foreground)); }
+.place svg { width: 1rem; height: 1rem; }
+.place-name { font-size: 1.25rem; font-weight: 600; color: hsl(var(--foreground)); letter-spacing: -.02em; margin: 0; }
+.temp { font-size: 5rem; line-height: 1; font-weight: 600; letter-spacing: -.05em; margin: 1rem 0 .25rem; font-variant-numeric: tabular-nums; }
+.temp sup { font-size: 1.75rem; font-weight: 500; letter-spacing: 0; vertical-align: top; position: relative; top: .55rem; margin-left: .15rem; color: hsl(var(--muted-foreground)); }
+.summary { font-size: 1.125rem; font-weight: 500; margin: 0; }
+.range { color: hsl(var(--muted-foreground)); font-size: .875rem; margin: .25rem 0 0; }
+
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 40rem) { .stats { grid-template-columns: repeat(4, 1fr); } }
+.stat { padding: 1rem 1.25rem; border-right: 1px solid hsl(var(--border)); border-bottom: 1px solid hsl(var(--border)); }
+.stat:nth-child(2n) { border-right: 0; }
+.stat:nth-last-child(-n+2) { border-bottom: 0; }
+@media (min-width: 40rem) {
+  .stat { border-bottom: 0; }
+  .stat:nth-child(2n) { border-right: 1px solid hsl(var(--border)); }
+  .stat:last-child { border-right: 0; }
+}
+.stat-label { display: flex; align-items: center; gap: .375rem; font-size: .8125rem; color: hsl(var(--muted-foreground)); }
+.stat-label svg { width: .9rem; height: .9rem; }
+.stat-value { font-size: 1.5rem; font-weight: 600; letter-spacing: -.03em; margin-top: .25rem; font-variant-numeric: tabular-nums; }
+.stat-value small { font-size: .8rem; font-weight: 500; color: hsl(var(--muted-foreground)); letter-spacing: 0; margin-left: .15rem; }
+
+.sun-row { display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: .875rem; color: hsl(var(--muted-foreground)); padding: .875rem 1.5rem; border-top: 1px solid hsl(var(--border)); }
+.sun-row b { color: hsl(var(--foreground)); font-weight: 500; }
+
+.hourly { display: flex; gap: .25rem; overflow-x: auto; padding: 1rem 1rem 1.25rem; scrollbar-width: thin; }
+.hour { flex: 0 0 3.75rem; display: flex; flex-direction: column; align-items: center; gap: .375rem; padding: .625rem 0; border-radius: var(--radius); font-size: .875rem; font-variant-numeric: tabular-nums; }
+.hour.is-now { background: hsl(var(--muted)); }
+.hour .t { color: hsl(var(--muted-foreground)); font-size: .8125rem; }
+.hour .p { font-size: .6875rem; color: #2563eb; height: .9rem; }
+@media (prefers-color-scheme: dark) { .hour .p { color: #60a5fa; } }
+.hour svg, .day svg { width: 1.375rem; height: 1.375rem; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+.days { padding: .5rem 1.5rem 1rem; }
+.day { display: grid; grid-template-columns: 3.25rem 1.5rem 2.75rem 2.25rem 1fr 2.25rem; align-items: center; gap: .5rem; padding: .625rem 0; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.day + .day { border-top: 1px solid hsl(var(--border)); }
+.day .name { font-weight: 500; }
+.day .rain { color: #2563eb; font-size: .75rem; }
+@media (prefers-color-scheme: dark) { .day .rain { color: #60a5fa; } }
+.day .lo { color: hsl(var(--muted-foreground)); text-align: right; }
+.day .hi { font-weight: 500; }
+.bar { position: relative; height: .375rem; border-radius: 9999px; background: hsl(var(--muted)); }
+.bar i { position: absolute; top: 0; bottom: 0; border-radius: 9999px; background: linear-gradient(90deg, #38bdf8, #fbbf24 70%, #fb923c); }
+
+footer { margin-top: 1.5rem; font-size: .75rem; color: hsl(var(--muted-foreground)); text-align: center; }
+footer a { color: inherit; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main class="container">
+
+  <div class="toolbar">
+    <form id="search" role="search">
+      <input class="input" id="q" type="text" placeholder="Search a city" aria-label="Search a city" autocomplete="off">
+      <button class="btn btn-default" type="submit">Search</button>
+    </form>
+    <button class="btn btn-outline" id="locate" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+      My location
+    </button>
+    <div class="tabs-list" role="tablist" aria-label="Temperature unit">
+      <button class="tab" role="tab" data-unit="c" aria-selected="true">°C</button>
+      <button class="tab" role="tab" data-unit="f" aria-selected="false">°F</button>
+    </div>
+  </div>
+
+  <div id="error" class="alert hidden" role="alert" style="margin-bottom:1rem"></div>
+
+  <div id="app" class="stack" aria-live="polite"></div>
+
+  <footer>
+    Forecast by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.
+    Illustrations drawn in the style of <a href="https://www.opendoodles.com/" target="_blank" rel="noopener">Open Doodles</a>.
+  </footer>
+</main>
+
+<script>
+/* =========================================================
+   Doodles
+   Each weather kind maps to one SVG scene (viewBox 0 0 240 230).
+   To use the original artwork from opendoodles.com, paste an
+   exported SVG string into DOODLES[kind] (see the bottom of this
+   block) and it will replace the built-in drawing.
+   ========================================================= */
+const INK = '#18181b';
+const SK = `stroke="${INK}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"`;
+const SKIN = '#f6c7a3';
+
+const cloud = (x, y, s = 1, fill = '#fff') =>
+  `<path transform="translate(${x} ${y}) scale(${s})" vector-effect="non-scaling-stroke" ${SK} fill="${fill}" d="M0,30 Q-4,12 14,12 Q18,-6 38,0 Q50,-10 62,6 Q82,4 80,24 Q82,34 70,34 L8,34 Q0,36 0,30 Z"/>`;
+
+const sun = (cx, cy, r) => {
+  let rays = '';
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4, c = Math.cos(a), s = Math.sin(a);
+    rays += `<line x1="${cx + c * (r + 7)}" y1="${cy + s * (r + 7)}" x2="${cx + c * (r + 17)}" y2="${cy + s * (r + 17)}" ${SK}/>`;
+  }
+  return rays + `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fbbf24" ${SK}/>`;
+};
+
+const moon = (cx, cy) =>
+  `<path transform="translate(${cx - 24} ${cy - 24})" d="M26,2 A22,22 0 1 0 46,32 A18,18 0 0 1 26,2 Z" fill="#fde68a" ${SK}/>`;
+
+const star = (x, y, s = 1) =>
+  `<path transform="translate(${x} ${y}) scale(${s})" d="M0,-8 L2,-2 L8,0 L2,2 L0,8 L-2,2 L-8,0 L-2,-2 Z" fill="#fff" ${SK}/>`;
+
+const drops = (pts) => pts.map(([x, y]) =>
+  `<line x1="${x}" y1="${y}" x2="${x - 5}" y2="${y + 14}" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>`).join('');
+
+const flake = (x, y) =>
+  `<g transform="translate(${x} ${y})" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="-6" y1="0" x2="6" y2="0"/><line x1="0" y1="-6" x2="0" y2="6"/><line x1="-4" y1="-4" x2="4" y2="4"/><line x1="-4" y1="4" x2="4" y2="-4"/></g>`;
+
+const umbrella = (fill) =>
+  `<line x1="168" y1="52" x2="168" y2="96" ${SK}/>` +
+  `<path d="M104,52 Q168,-18 232,52 Q216,42 200,52 Q184,42 168,52 Q152,42 136,52 Q120,42 104,52 Z" fill="${fill}" ${SK}/>`;
+
+function person({ body, arms = 'down', face = 'smile', hat = null, scarf = null, extra = '' }) {
+  const armPaths = {
+    down:  `M92,130 Q76,150 80,172 M148,130 Q164,150 160,172`,
+    wave:  `M92,130 Q76,150 80,172 M148,130 Q180,126 182,96`,
+    umb:   `M92,130 Q76,150 80,172 M148,130 Q168,122 168,98`,
+    hip:   `M92,130 Q68,146 92,162 M148,130 Q172,146 148,162`,
+    shrug: `M92,130 Q70,140 66,118 M148,130 Q170,140 174,118`,
+    mug:   `M92,130 Q76,150 80,172 M148,130 Q160,150 138,152`,
+  }[arms];
+  const hands = {
+    wave: `<circle cx="182" cy="92" r="6" fill="${SKIN}" ${SK}/>`,
+    umb:  `<circle cx="168" cy="97" r="6" fill="${SKIN}" ${SK}/>`,
+    shrug:`<circle cx="66" cy="115" r="6" fill="${SKIN}" ${SK}/><circle cx="174" cy="115" r="6" fill="${SKIN}" ${SK}/>`,
+    mug:  `<rect x="128" y="140" width="18" height="18" rx="3" fill="#f87171" ${SK}/><path d="M146,145 q8,1 0,9" fill="none" ${SK}/>`,
+  }[arms] || '';
+  const faces = {
+    smile:  `<circle cx="110" cy="95" r="2.8" fill="${INK}"/><circle cx="130" cy="95" r="2.8" fill="${INK}"/><path d="M110,104 Q120,114 130,104" fill="none" ${SK}/>`,
+    shades: `<ellipse cx="109" cy="94" rx="9" ry="6" fill="${INK}"/><ellipse cx="131" cy="94" rx="9" ry="6" fill="${INK}"/><line x1="117" y1="93" x2="123" y2="93" ${SK}/><path d="M111,106 Q120,114 129,106" fill="none" ${SK}/>`,
+    sleepy: `<path d="M104,95 Q110,100 116,95 M124,95 Q130,100 136,95" fill="none" ${SK}/><path d="M113,106 Q120,111 127,106" fill="none" ${SK}/>`,
+    meh:    `<circle cx="110" cy="95" r="2.8" fill="${INK}"/><circle cx="130" cy="95" r="2.8" fill="${INK}"/><line x1="112" y1="106" x2="128" y2="106" ${SK}/>`,
+    oh:     `<circle cx="110" cy="94" r="3" fill="${INK}"/><circle cx="130" cy="94" r="3" fill="${INK}"/><ellipse cx="120" cy="108" rx="4" ry="5" fill="${INK}"/>`,
+  }[face];
+  const hair = hat
+    ? `<path d="M93,80 Q92,50 120,50 Q148,50 147,80 Z" fill="${hat}" ${SK}/><rect x="90" y="76" width="60" height="10" rx="5" fill="#fff" ${SK}/><circle cx="120" cy="48" r="7" fill="#fff" ${SK}/>`
+    : `<path d="M94,90 Q90,62 120,62 Q150,62 146,90 Q138,76 120,78 Q102,76 94,90 Z" fill="${INK}" ${SK}/>`;
+  const sc = scarf
+    ? `<path d="M96,118 Q120,132 144,118 L144,130 Q120,144 96,130 Z" fill="${scarf}" ${SK}/><path d="M132,134 L136,166 L148,164 L144,132 Z" fill="${scarf}" ${SK}/>`
+    : '';
+  return `
+    <path d="M106,182 L104,208 M134,182 L136,208" ${SK} fill="none" stroke-width="4"/>
+    <ellipse cx="98" cy="210" rx="11" ry="5" fill="${INK}"/><ellipse cx="142" cy="210" rx="11" ry="5" fill="${INK}"/>
+    <path d="M90,122 Q86,176 96,184 L144,184 Q154,176 150,122 Q120,110 90,122 Z" fill="${body}" ${SK}/>
+    <path d="${armPaths}" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>
+    ${hands}
+    <circle cx="120" cy="92" r="26" fill="${SKIN}" ${SK}/>
+    ${hair}${faces}
+    <ellipse cx="102" cy="103" rx="4" ry="2.5" fill="#fb7185" opacity=".55"/><ellipse cx="138" cy="103" rx="4" ry="2.5" fill="#fb7185" opacity=".55"/>
+    ${sc}${extra}`;
+}
+
+const ground = `<path d="M24,214 Q120,208 216,214" fill="none" ${SK}/>`;
+
+const SCENES = {
+  clear: {
+    bg: '#fde68a', quip: 'Sunnies on. Go outside.',
+    svg: sun(188, 52, 24) + person({ body: '#fb7185', arms: 'wave', face: 'shades' }) + ground,
+  },
+  night: {
+    bg: '#c7d2fe', quip: 'Clear skies. Look up.',
+    svg: moon(188, 56) + star(150, 30, 1) + star(214, 112, .8) + star(60, 120, .7) + person({ body: '#818cf8', arms: 'mug', face: 'sleepy' }) + ground,
+  },
+  partly: {
+    bg: '#bae6fd', quip: 'A bit of everything.',
+    svg: sun(176, 56, 22) + cloud(168, 62, 1.1) + person({ body: '#34d399', arms: 'hip' }) + ground,
+  },
+  cloudy: {
+    bg: '#e4e4e7', quip: 'Grey, but dry.',
+    svg: cloud(130, 18, 1.1) + cloud(24, 112, .8, '#f4f4f5') + cloud(158, 90, .9) + person({ body: '#fbbf24', arms: 'shrug', face: 'meh' }) + ground,
+  },
+  fog: {
+    bg: '#e5e7eb', quip: "Can't see a thing.",
+    svg: person({ body: '#a78bfa', arms: 'down', face: 'meh' }) + ground +
+      `<g fill="#fff" opacity=".78"><rect x="14" y="70" width="170" height="14" rx="7"/><rect x="60" y="112" width="170" height="14" rx="7"/><rect x="20" y="150" width="180" height="14" rx="7"/><rect x="50" y="188" width="170" height="14" rx="7"/></g>`,
+  },
+  rain: {
+    bg: '#bfdbfe', quip: 'Take an umbrella.',
+    svg: `<ellipse cx="120" cy="213" rx="70" ry="8" fill="#93c5fd"/>` + person({ body: '#fbbf24', arms: 'umb' }) + umbrella('#f43f5e') + ground +
+      drops([[40, 40], [70, 90], [30, 120], [200, 130], [214, 90], [58, 160], [196, 170], [90, 30]]),
+  },
+  snow: {
+    bg: '#e0f2fe', quip: 'Rug up. It\u2019s snowing.',
+    svg: `<ellipse cx="120" cy="214" rx="96" ry="12" fill="#fff" ${SK}/>` + person({ body: '#f87171', arms: 'wave', hat: '#38bdf8', scarf: '#fbbf24' }) +
+      [[40, 50], [70, 100], [28, 140], [206, 110], [200, 170], [60, 180], [176, 40], [90, 20]].map(([x, y]) => flake(x, y)).join(''),
+  },
+  storm: {
+    bg: '#c4b5fd', quip: 'Stay in. Thunder out there.',
+    svg: cloud(110, -4, 1.2, '#a1a1aa') +
+      `<path d="M176,40 L158,64 L172,64 L164,86 L190,56 L175,56 Z" fill="#facc15" ${SK}/>` +
+      `<ellipse cx="120" cy="213" rx="70" ry="8" fill="#ddd6fe"/>` + person({ body: '#38bdf8', arms: 'down', face: 'oh' }) + ground +
+      drops([[34, 70], [64, 110], [24, 150], [204, 120], [216, 170], [56, 176], [90, 60]]),
+  },
+};
+
+/* Swap in artwork from opendoodles.com here, e.g.
+   DOODLES.rain = '<svg viewBox="0 0 800 800">…</svg>';  */
+const DOODLES = {};
+
+const doodleFor = (kind) => DOODLES[kind] ||
+  `<svg viewBox="0 0 240 230" role="img" aria-label="Doodle illustration of the weather" xmlns="http://www.w3.org/2000/svg">
+     <defs><filter id="wobble" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.5"/></filter></defs>
+     <g filter="url(#wobble)">${SCENES[kind].svg}</g>
+   </svg>`;
+
+/* =========================================================
+   Icons (lucide-style, 24px)
+   ========================================================= */
+const CLOUD = 'M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z';
+const ICONS = {
+  clear:  '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  night:  '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  partly: '<path d="M12 2v2M4.93 4.93l1.41 1.41M20 12h2M19.07 4.93l-1.41 1.41M15.95 8.5A4 4 0 1 0 9.1 12"/><path d="M17 20H9.5a4.5 4.5 0 1 1 4.3-5.8H17a3 3 0 0 1 0 5.8Z"/>',
+  cloudy: `<path d="${CLOUD}"/>`,
+  fog:    '<path d="M4 8h16M3 12h14M6 16h15M9 20h9"/>',
+  rain:   '<path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M16 14v6M8 14v6M12 16v6"/>',
+  snow:   '<path d="M12 3v18M5 7.5l14 9M19 7.5l-14 9"/>',
+  storm:  '<path d="M6 16.3A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="m13 12-3 5h4l-3 5"/>',
+};
+const icon = (kind) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[kind]}</svg>`;
+
+const UI = {
+  pin:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+  thermo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.5a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>',
+  drop:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7Z"/></svg>',
+  wind:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2M9.6 4.6A2 2 0 1 1 11 8H2M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>',
+  sun:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>',
+};
+
+/* =========================================================
+   Weather logic
+   ========================================================= */
+const WMO = {
+  0: ['Clear sky', 'clear'], 1: ['Mostly clear', 'clear'], 2: ['Partly cloudy', 'partly'], 3: ['Overcast', 'cloudy'],
+  45: ['Fog', 'fog'], 48: ['Freezing fog', 'fog'],
+  51: ['Light drizzle', 'rain'], 53: ['Drizzle', 'rain'], 55: ['Heavy drizzle', 'rain'], 56: ['Freezing drizzle', 'rain'], 57: ['Freezing drizzle', 'rain'],
+  61: ['Light rain', 'rain'], 63: ['Rain', 'rain'], 65: ['Heavy rain', 'rain'], 66: ['Freezing rain', 'rain'], 67: ['Freezing rain', 'rain'],
+  71: ['Light snow', 'snow'], 73: ['Snow', 'snow'], 75: ['Heavy snow', 'snow'], 77: ['Snow grains', 'snow'],
+  80: ['Light showers', 'rain'], 81: ['Showers', 'rain'], 82: ['Heavy showers', 'rain'], 85: ['Snow showers', 'snow'], 86: ['Heavy snow showers', 'snow'],
+  95: ['Thunderstorm', 'storm'], 96: ['Thunderstorm with hail', 'storm'], 99: ['Thunderstorm with hail', 'storm'],
+};
+const describe = (code, isDay = 1) => {
+  const [label, kind] = WMO[code] || ['Unknown', 'cloudy'];
+  return { label, kind: kind === 'clear' && !isDay ? 'night' : kind };
+};
+
+const $ = (s) => document.querySelector(s);
+const app = $('#app');
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+const state = {
+  unit: store.get('wx-unit') || (/^en-US/.test(navigator.language) ? 'f' : 'c'),
+  loc: store.get('wx-loc'), // {lat, lon, name}
+};
+
+function showError(title, msg) {
+  const el = $('#error');
+  el.innerHTML = `${UI.alert}<div><strong>${esc(title)}</strong><span>${esc(msg)}</span></div>`;
+  el.classList.remove('hidden');
+}
+const clearError = () => $('#error').classList.add('hidden');
+
+function skeleton() {
+  app.innerHTML = `
+    <div class="card"><div class="hero">
+      <div class="doodle-panel" style="background:hsl(var(--muted))"></div>
+      <div class="now" style="gap:.75rem">
+        <div class="skeleton" style="height:1rem;width:40%"></div>
+        <div class="skeleton" style="height:4.5rem;width:70%"></div>
+        <div class="skeleton" style="height:1rem;width:50%"></div>
+      </div></div></div>
+    <div class="card"><div class="card-content"><div class="skeleton" style="height:5rem"></div></div></div>
+    <div class="card"><div class="card-content"><div class="skeleton" style="height:12rem"></div></div></div>`;
+}
+
+const hr12 = (h) => `${h % 12 || 12} ${h < 12 ? 'am' : 'pm'}`;
+const t12 = (iso) => { const [h, m] = iso.slice(11, 16).split(':').map(Number); return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`; };
+const deg = (n) => Math.round(n);
+
+function quipFor(kind, temp) {
+  return SCENES[kind].quip;
+}
+
+function render(data) {
+  const c = data.current, d = data.daily, h = data.hourly;
+  const unit = state.unit.toUpperCase();
+  const speedUnit = state.unit === 'c' ? 'km/h' : 'mph';
+  const now = describe(c.weather_code, c.is_day);
+  const scene = SCENES[now.kind];
+
+  // Hourly: start at the current hour, show 24
+  const curHour = c.time.slice(0, 13);
+  let start = h.time.findIndex((t) => t.slice(0, 13) === curHour);
+  if (start < 0) start = 0;
+  const hours = h.time.slice(start, start + 24).map((t, i) => {
+    const idx = start + i;
+    const hh = +t.slice(11, 13);
+    const isDay = hh >= +d.sunrise[0].slice(11, 13) && hh < +d.sunset[0].slice(11, 13);
+    const k = describe(h.weather_code[idx], isDay).kind;
+    const p = h.precipitation_probability[idx];
+    return `<div class="hour ${i === 0 ? 'is-now' : ''}">
+      <span class="t">${i === 0 ? 'Now' : hr12(hh)}</span>
+      ${icon(k)}
+      <span class="p">${p >= 20 ? p + '%' : ''}</span>
+      <span>${deg(h.temperature_2m[idx])}°</span></div>`;
+  }).join('');
+
+  // Daily bars
+  const lo = Math.min(...d.temperature_2m_min), hi = Math.max(...d.temperature_2m_max), span = (hi - lo) || 1;
+  const days = d.time.map((dt, i) => {
+    const name = i === 0 ? 'Today' : new Date(dt + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short' });
+    const k = describe(d.weather_code[i]).kind;
+    const l = ((d.temperature_2m_min[i] - lo) / span) * 100, r = ((d.temperature_2m_max[i] - lo) / span) * 100;
+    const p = d.precipitation_probability_max[i];
+    return `<div class="day">
+      <span class="name">${name}</span>${icon(k)}
+      <span class="rain">${p >= 20 ? p + '%' : ''}</span>
+      <span class="lo">${deg(d.temperature_2m_min[i])}°</span>
+      <div class="bar"><i style="left:${l}%;right:${100 - r}%"></i></div>
+      <span class="hi">${deg(d.temperature_2m_max[i])}°</span></div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <section class="card" aria-label="Current weather">
+      <div class="hero">
+        <div class="doodle-panel" style="background:${scene.bg}">
+          <div class="bubble">${esc(quipFor(now.kind, c.temperature_2m))}</div>
+          ${doodleFor(now.kind)}
+        </div>
+        <div class="now">
+          <div class="place">${UI.pin}<span>${esc(state.loc.region || 'Current location')}</span></div>
+          <h1 class="place-name">${esc(state.loc.name)}</h1>
+          <div class="temp">${deg(c.temperature_2m)}<sup>°${unit}</sup></div>
+          <p class="summary">${now.label}</p>
+          <p class="range">High ${deg(d.temperature_2m_max[0])}° &nbsp;·&nbsp; Low ${deg(d.temperature_2m_min[0])}°</p>
+        </div>
+      </div>
+      <div class="separator"></div>
+      <div class="stats">
+        <div class="stat"><div class="stat-label">${UI.thermo}Feels like</div><div class="stat-value">${deg(c.apparent_temperature)}°</div></div>
+        <div class="stat"><div class="stat-label">${UI.drop}Humidity</div><div class="stat-value">${c.relative_humidity_2m}<small>%</small></div></div>
+        <div class="stat"><div class="stat-label">${UI.wind}Wind</div><div class="stat-value">${deg(c.wind_speed_10m)}<small>${speedUnit}</small></div></div>
+        <div class="stat"><div class="stat-label">${UI.sun}UV index</div><div class="stat-value">${Math.round(d.uv_index_max[0])}</div></div>
+      </div>
+      <div class="sun-row">
+        <span>Sunrise <b>${t12(d.sunrise[0])}</b></span>
+        <span>Sunset <b>${t12(d.sunset[0])}</b></span>
+        <span>Rain today <b>${d.precipitation_probability_max[0]}%</b></span>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Hourly forecast">
+      <div class="card-header"><h2 class="card-title">Next 24 hours</h2><p class="card-description">Chance of rain shows when it reaches 20%.</p></div>
+      <div class="hourly">${hours}</div>
+    </section>
+
+    <section class="card" aria-label="7-day forecast">
+      <div class="card-header"><h2 class="card-title">7-day forecast</h2><p class="card-description">Bars show each day's range against the week.</p></div>
+      <div class="days">${days}</div>
+    </section>`;
+}
+
+async function loadWeather() {
+  if (!state.loc) return;
+  clearError();
+  skeleton();
+  const f = state.unit === 'f';
+  const url = new URL('https://api.open-meteo.com/v1/forecast');
+  url.search = new URLSearchParams({
+    latitude: state.loc.lat, longitude: state.loc.lon,
+    current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day',
+    hourly: 'temperature_2m,weather_code,precipitation_probability',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,sunrise,sunset',
+    timezone: 'auto', forecast_days: 7,
+    temperature_unit: f ? 'fahrenheit' : 'celsius', wind_speed_unit: f ? 'mph' : 'kmh',
+  });
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Weather service returned ' + res.status);
+    render(await res.json());
+  } catch (e) {
+    app.innerHTML = '';
+    showError("Couldn't load the forecast", 'Check your connection and try again. (' + e.message + ')');
+  }
+}
+
+async function reverseGeocode(lat, lon) {
+  try {
+    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+    const j = await r.json();
+    const name = j.city || j.locality || j.principalSubdivision;
+    if (name) return { name, region: [j.principalSubdivision !== name ? j.principalSubdivision : '', j.countryName].filter(Boolean).join(', ') };
+  } catch {}
+  return { name: `${lat.toFixed(2)}, ${lon.toFixed(2)}`, region: 'Current location' };
+}
+
+function useMyLocation() {
+  clearError();
+  if (!navigator.geolocation) { showError('Location is not available', 'This browser can’t share your location. Search for a city instead.'); return; }
+  skeleton();
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const { latitude: lat, longitude: lon } = pos.coords;
+    const place = await reverseGeocode(lat, lon);
+    state.loc = { lat, lon, ...place, auto: true };
+    store.set('wx-loc', state.loc);
+    loadWeather();
+  }, (err) => {
+    app.innerHTML = '';
+    showError(
+      err.code === 1 ? 'Location access is blocked' : "Couldn't find your location",
+      err.code === 1 ? 'Allow location for this page in your browser settings, or search for a city above.' : 'Search for a city above instead.'
+    );
+    $('#q').focus();
+  }, { timeout: 10000, maximumAge: 600000 });
+}
+
+async function searchCity(q) {
+  clearError();
+  try {
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en`);
+    const j = await r.json();
+    const p = j.results && j.results[0];
+    if (!p) { showError('No match found', `Nothing came up for “${q}”. Check the spelling or try a larger nearby city.`); return; }
+    state.loc = { lat: p.latitude, lon: p.longitude, name: p.name, region: [p.admin1, p.country].filter(Boolean).join(', ') };
+    store.set('wx-loc', state.loc);
+    loadWeather();
+  } catch {
+    showError("Couldn't search", 'Check your connection and try again.');
+  }
+}
+
+/* ---------- wiring ---------- */
+$('#search').addEventListener('submit', (e) => { e.preventDefault(); const q = $('#q').value.trim(); if (q) searchCity(q); });
+$('#locate').addEventListener('click', useMyLocation);
+document.querySelectorAll('.tab').forEach((b) => {
+  b.addEventListener('click', () => {
+    state.unit = b.dataset.unit;
+    store.set('wx-unit', state.unit);
+    syncTabs();
+    loadWeather();
+  });
+});
+function syncTabs() { document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', b.dataset.unit === state.unit)); }
+
+syncTabs();
+// Start from the visitor's current location; fall back to the last place they searched.
+if (state.loc && !state.loc.auto) loadWeather(); else useMyLocation();
+</script>
+</body>
+</html>
